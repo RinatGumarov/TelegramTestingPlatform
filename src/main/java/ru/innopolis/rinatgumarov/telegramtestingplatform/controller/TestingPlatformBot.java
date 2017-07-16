@@ -14,6 +14,8 @@ import org.telegram.telegrambots.logging.BotLogger;
 import ru.innopolis.rinatgumarov.telegramtestingplatform.utils.Utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,20 +34,31 @@ import static ru.innopolis.rinatgumarov.telegramtestingplatform.model.commands.C
 public class TestingPlatformBot extends TelegramLongPollingBot {
 
     private final String TOKEN;
+    private final String USERNAME;
     private Map<Integer, JSONObject> stateMap = new HashMap<>();
 
     public TestingPlatformBot() {
-        TOKEN = "";
+
+        Properties properties = new Properties();
+        try {
+            FileInputStream in = new FileInputStream("src/main/resources/bot.properties");
+            properties.load(in);
+            in.close();
+        } catch (IOException e) {
+            error(e);
+        }
+        TOKEN = properties.getProperty("bot.token");
+        USERNAME = properties.getProperty("bot.username");
     }
 
     public void onUpdateReceived(Update update) {
 
-        BotLogger.info(this.getClass().getName(), update.getMessage().toString());
-        System.out.println(update.getMessage().getDate());
+        if (update.hasMessage())
+            BotLogger.info(this.getClass().getName(), update.getMessage().toString());
         try {
             if (update.hasMessage()) {
-                if (update.getMessage().getText().equals("/gimmetits") ||
-                        update.getMessage().hasPhoto() && update.getMessage().getCaption().equals("tits")) {
+                if (update.getMessage().hasText() && update.getMessage().getText().equals("/gimmetits") ||
+                        update.getMessage().hasPhoto() && update.getMessage().getCaption() != null && update.getMessage().getCaption().equals("tits")) {
                     Message message = update.getMessage();
                     if (message.hasPhoto()) {
                         savePhoto(update);
@@ -89,8 +102,8 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     }
 
     private void handleFinish(Update update) {
-        if (update.getMessage().hasText()){
-            switch (update.getMessage().getText()){
+        if (update.getMessage().hasText()) {
+            switch (update.getMessage().getText()) {
                 case "/submit":
 
             }
@@ -98,8 +111,8 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     }
 
     private void handleAddingAnswer(Update update) {
-        if (update.getMessage().hasText()){
-            switch (update.getMessage().getText()){
+        if (update.getMessage().hasText()) {
+            switch (update.getMessage().getText()) {
                 default:
                     if (update.getMessage().getText().trim().startsWith("/true")) {
 
@@ -109,26 +122,24 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
                                         .substring(update.getMessage().getText().indexOf('e'))));
                         try {
                             sendMessage(new SendMessage()
-                            .setChatId(update.getMessage().getChatId())
-                            .setText("/addanswer - to add answer for last question" +
-                                    "\n/addquestion - to add new question" +
-                                    "\n/submit - to submit test"));
+                                    .setChatId(update.getMessage().getChatId())
+                                    .setText("/addanswer - to add answer for last question" +
+                                            "\n/addquestion - to add new question" +
+                                            "\n/submit - to submit test"));
                         } catch (TelegramApiException e) {
                             error(e);
                         }
-                    }
-                    else if (update.getMessage().getText().trim().startsWith("/false")){
+                    } else if (update.getMessage().getText().trim().startsWith("/false")) {
                         ((JSONObject) ((JSONArray) getTestJSONObject(update).get("questions"))
                                 .get(((JSONArray) getTestJSONObject(update).get("questions")).length() - 1))
                                 .append("answers", new JSONObject().put("istrue", false).put("answer", update.getMessage().getText()
                                         .substring(update.getMessage().getText().indexOf('e'))));
-                    }
-                    else
+                    } else
                         try {
                             sendMessage(new SendMessage()
-                            .setChatId(update.getMessage().getChatId())
-                            .setText("This is incorrect answer" +
-                                    "\nSee the example and try again"));
+                                    .setChatId(update.getMessage().getChatId())
+                                    .setText("This is incorrect answer" +
+                                            "\nSee the example and try again"));
                         } catch (TelegramApiException e) {
                             error(e);
                         }
@@ -137,11 +148,11 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     }
 
     private void handleAddingQuestion(Update update) {
-        if (update.getMessage().hasText()){
-            switch (update.getMessage().getText()){
+        if (update.getMessage().hasText()) {
+            switch (update.getMessage().getText()) {
                 default:
-                    ((JSONObject)((JSONArray)getTestJSONObject(update).get("questions"))
-                            .get(((JSONArray) getTestJSONObject(update).get("questions")).length()-1))
+                    ((JSONObject) ((JSONArray) getTestJSONObject(update).get("questions"))
+                            .get(((JSONArray) getTestJSONObject(update).get("questions")).length() - 1))
                             .put("text", update.getMessage().getText());
                     getJSONObject(update).put("state", BotState.ADDING_ANSWER);
                     try {
@@ -161,11 +172,11 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
 
     private void handleCreationEnd(Update update) {
         if (!getTestJSONObject(update).has("questions")) {
-            if (update.getMessage().getText().equals("/add")){
+            if (update.getMessage().getText().equals("/add")) {
                 try {
                     sendMessage(new SendMessage()
-                    .setChatId(update.getMessage().getChatId())
-                    .setText("send me your question"));
+                            .setChatId(update.getMessage().getChatId())
+                            .setText("send me your question"));
                     getJSONObject(update).put("state", BotState.ADDING_QUESTION);
                     getTestJSONObject(update).append("questions", new JSONObject().put("text", update.getMessage().getText()));
                 } catch (TelegramApiException e) {
@@ -297,11 +308,14 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     }
 
     public void savePhoto(Update update) {
-        System.out.println();
         File file = downloadPhotoByFilePath(getFilePath(getPhoto(update)));
-        System.out.println(file.getPath());
         try {
-            Files.move(Paths.get(file.getAbsolutePath()), Paths.get("bar.jpg"));
+            Files.move(Paths.get(file.getAbsolutePath()),
+                    Paths.get("src/main/resources/img/"
+                            + new Date(update.getMessage().getDate() * 1000).getDate()
+                            + "_from_" + update.getMessage().getFrom().getUserName()
+                            + "_at_" + update.getMessage().getDate().toString()
+                            + ".jpg"));
         } catch (IOException e) {
             System.out.println("couldn't move file " + file.getName() + ": " + e.getMessage());
         }
@@ -310,7 +324,7 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     }
 
     public String getBotUsername() {
-        return "TestingPlatformBot";
+        return USERNAME;
     }
 
     public String getBotToken() {
@@ -321,11 +335,11 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
         return ((JSONObject) stateMap.get(update.getMessage().getFrom().getId()).get("test"));
     }
 
-    private void error(Exception e){
+    private void error(Exception e) {
         BotLogger.error(this.getClass().getName(), e.getMessage());
     }
 
-    private void info(Exception e){
+    private void info(Exception e) {
         BotLogger.info(this.getClass().getName(), e.getMessage());
     }
 
