@@ -27,3 +27,12 @@ hs_err_pid*
 
 #Properties
 *.properties
+
+#Mac
+.DS_Store
+
+#Maven
+target/
+
+#Resources
+src/main/resources/
