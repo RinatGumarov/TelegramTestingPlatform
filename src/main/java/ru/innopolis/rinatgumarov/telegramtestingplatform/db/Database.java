@@ -4,10 +4,7 @@ import org.telegram.telegrambots.logging.BotLogger;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Properties;
 
 /**
@@ -47,6 +44,15 @@ public class Database {
             BotLogger.info(this.getClass().getName(), "Connection to database failed with message: " + e.getMessage());
         } catch (NullPointerException e) {
             BotLogger.info(this.getClass().getName(), "Wrong properties");
+        }
+    }
+
+    public ResultSet fetch(String query){
+        try {
+            return stmt.executeQuery(query);
+        } catch (SQLException e) {
+            BotLogger.error(this.getClass().getName(), e.getMessage());
+            return null;
         }
     }
 
