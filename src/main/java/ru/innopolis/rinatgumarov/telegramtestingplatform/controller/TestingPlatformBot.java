@@ -38,6 +38,8 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     private final String TOKEN;
     private final String USERNAME;
     private Map<Integer, JSONObject> stateMap = new HashMap<>();
+    private Map<Integer, JSONObject> testMap = new HashMap<>();
+
 
     public TestingPlatformBot() {
 
@@ -306,7 +308,14 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
                     break;
                 case COMMAND_TAKE:
                     changeState(update, BotState.TAKING_START);
-                    
+                    testMap.put(update.getMessage().getFrom().getId(), new JSONObject());
+                    try {
+                        sendMessage(new SendMessage()
+                            .setChatId(update.getMessage().getChatId())
+                            .setText(""));
+                    } catch (TelegramApiException e) {
+                        error(e.getMessage());
+                    }
             }
         }
     }
