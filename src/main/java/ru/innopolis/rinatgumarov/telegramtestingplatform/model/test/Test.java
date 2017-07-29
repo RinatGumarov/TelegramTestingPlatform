@@ -1,12 +1,15 @@
 package ru.innopolis.rinatgumarov.telegramtestingplatform.model.test;
 
+import ru.innopolis.rinatgumarov.telegramtestingplatform.model.testgivening.TestGiver;
+
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * Created by Rinat on 12.07.17.
  */
-public class Test {
+public class Test implements Iterable<Question>{
 
     private final String TOKEN;
 
@@ -50,5 +53,10 @@ public class Test {
     @Override
     public String toString() {
         return "name=\"" + name + "\"; questions=" + questions.toString();
+    }
+
+    @Override
+    public Iterator<Question> iterator() {
+        return new TestGiver(this);
     }
 }

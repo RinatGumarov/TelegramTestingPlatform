@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
@@ -39,6 +40,7 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
     private final String USERNAME;
     private Map<Integer, JSONObject> stateMap = new HashMap<>();
     private Map<Integer, JSONObject> testMap = new HashMap<>();
+    private Map<Integer, Test> currentTest = new HashMap<>();
 
 
     public TestingPlatformBot() {
@@ -76,10 +78,10 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
                     if (message.hasText()) {
                         generateAnswer(message);
                         Test t = TestFetcher.fetchTest("ec9c0ccbad9d864");
+//                        editMessageText(new EditMessageText().setChatId(update.getMessage().getChatId()).setText("edited"));
                         sendMessage(new SendMessage()
                                 .setChatId(update.getMessage().getChatId())
                                 .setText(t.toString()));
-                        System.out.println(t.getName());
                     }
                 } else handleMessage(update);
             }
@@ -113,6 +115,19 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
                 break;
             case FINISH:
                 handleFinish(update);
+                break;
+            case TAKING_START:
+                handeTakingStart(update);
+        }
+    }
+
+    private void handeTakingStart(Update update) {
+        if (update.getMessage().hasText()){
+            switch (update.getMessage().getText()){
+                default:
+                    Test t = TestFetcher.fetchTest(update.getMessage().getText());
+                    currentTest.put(update.getMessage().getFrom().getId(), t);
+            }
         }
     }
 
@@ -312,7 +327,7 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
                     try {
                         sendMessage(new SendMessage()
                             .setChatId(update.getMessage().getChatId())
-                            .setText(""));
+                            .setText("Please, send me token of test, that you want to take"));
                     } catch (TelegramApiException e) {
                         error(e.getMessage());
                     }
@@ -428,7 +443,7 @@ public class TestingPlatformBot extends TelegramLongPollingBot {
             Date t = new Date(update.getMessage().getDate() * 1000L);
             Files.move(Paths.get(file.getAbsolutePath()),
                     Paths.get(new StringBuilder("src/main/resources/img/")
-                            .append(t.getYear() + 1900).append("-").append(t.getMonth()).append("-").append(t.getDate())
+                            .append(t.getYear() + 1900).append("-").append(t.getMonth()+1).append("-").append(t.getDate())
                             .append("_from_")
                             .append(update.getMessage().getFrom().getUserName() == null ?
                                     update.getMessage().getFrom().getFirstName() == null ?

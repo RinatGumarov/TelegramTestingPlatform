@@ -4,8 +4,17 @@ package ru.innopolis.rinatgumarov.telegramtestingplatform.model.test;
  * Created by Rinat on 17/07/2017.
  */
 public class Answer {
+    private int id;
     private String answer;
     private boolean isTrue;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getAnswer() {
         return answer;

@@ -21,7 +21,7 @@ public class TestFetcher {
                 t.setName(rs.getString("name"));
                 t.setUser_id(rs.getInt("user_id"));
                 rs = Database.getINSTANCE()
-                        .fetch("select q.id, q.question, a.answer, a.istrue" +
+                        .fetch("select q.id, a.id, q.question, a.answer, a.istrue" +
                                 " from questions q, answers a where q.test_token = '"
                                 + testToken + "' and a.test_token = '"
                                 + testToken + "' and a.id_question = q.id order by q.id;");
@@ -30,12 +30,15 @@ public class TestFetcher {
                 while (b) {
                     Question q = new Question();
                     q.setQuestion(rs.getString("question"));
+                    q.setId(rs.getInt("q.id"));
                     Answer answer = new Answer();
                     answer.setAnswer(rs.getString("answer"));
+                    answer.setId(rs.getInt("a.id"));
                     answer.setTrue(rs.getInt("istrue") == 1);
                     q.addAnswer(answer);
                     while ((b = rs.next()) && rs.getInt(1) == (t.getQuestions().size())) {
                         answer = new Answer();
+                        answer.setId(rs.getInt("a.id"));
                         answer.setAnswer(rs.getString("answer"));
                         answer.setTrue(rs.getInt("istrue") == 1);
                         q.addAnswer(answer);
